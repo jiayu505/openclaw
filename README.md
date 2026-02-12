@@ -103,6 +103,16 @@ sed -i 's/enable_registration_without_verification: true/enable_registration_wit
 docker restart synapse
 ```
 
+> 以后想再开放注册（比如给朋友注册账号），执行：
+>
+> ```bash
+> sed -i 's/enable_registration: false/enable_registration: true/' /opt/matrix/synapse/homeserver.yaml
+> sed -i 's/enable_registration_without_verification: false/enable_registration_without_verification: true/' /opt/matrix/synapse/homeserver.yaml
+> docker restart synapse
+> ```
+>
+> 注册完后记得再关掉。
+
 ---
 
 ## 架构一览
