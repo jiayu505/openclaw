@@ -1,171 +1,101 @@
-# OpenClaw One-Click Deploy Toolkit for Ubuntu
+# OpenClaw 一键部署工具包
 
-> From zero to a fully working AI agent with Matrix chat — two scripts, two commands.
+### 两条命令，从零到一个能聊天的 AI 助手。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Ubuntu%2022.04-E95420?logo=ubuntu&logoColor=white)](https://ubuntu.com)
-[![Node.js](https://img.shields.io/badge/Node.js-22-339933?logo=node.js&logoColor=white)](https://nodejs.org)
-[![OpenClaw](https://img.shields.io/badge/OpenClaw-Latest-FF6B6B?logo=lobster&logoColor=white)](https://openclaw.ai)
+[![Platform](https://img.shields.io/badge/Ubuntu-22.04+-E95420?logo=ubuntu&logoColor=white)](https://ubuntu.com)
+[![OpenClaw](https://img.shields.io/badge/OpenClaw-Latest-FF6B6B)](https://openclaw.ai)
 [![Matrix](https://img.shields.io/badge/Matrix-Synapse-0DBD8B?logo=matrix&logoColor=white)](https://matrix.org)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 
 ---
 
-## What's Included
+## 这是什么？
 
-| Script | What it does |
-|--------|-------------|
-| `install-openclaw.sh` | Install OpenClaw + Node.js + swap + firewall on a fresh Ubuntu VPS |
-| `setup-matrix-for-openclaw.sh` | Deploy a full Matrix stack (Synapse + Element Web + Nginx + SSL) and wire it to OpenClaw |
+[OpenClaw](https://openclaw.ai) 是一个开源的 AI 助手，跑在你自己的服务器上，通过聊天软件（Matrix / Telegram / WhatsApp / Discord）跟它对话，它帮你干活。
 
-Run them in order — first install OpenClaw, then set up Matrix as the chat channel.
+本仓库提供两个脚本，让你在云服务器上**无脑部署**：
+
+| 脚本 | 干什么 |
+|------|--------|
+| `install-openclaw.sh` | 装 OpenClaw（含 Node.js、Swap、防火墙，全自动） |
+| `setup-matrix-for-openclaw.sh` | 装 Matrix 聊天服务（Synapse + Element 网页版 + SSL 证书，全自动） |
 
 ---
 
-## What is OpenClaw?
+## 你需要准备什么
 
-[OpenClaw](https://openclaw.ai) is a free, open-source **autonomous AI agent** that runs on your own server. Connect it to WhatsApp, Telegram, Discord, or Signal — then control it with natural language to handle real-world tasks: scheduling, email triage, web automation, shopping, and more.
+- 一台 Ubuntu 22.04 云服务器（推荐 AWS Lightsail 4核16G）
+- 一个 AI 模型的 API Key（Anthropic / OpenAI / Google 任选）
+- （装 Matrix 的话）两个域名解析到服务器 IP
 
-- **Self-hosted** — your data stays on your machine
-- **Multi-platform** — WhatsApp, Telegram, Discord, Signal, Web UI
-- **Multi-model** — Claude, GPT, DeepSeek, Gemini, and more
-- **Extensible** — 3,000+ community skills on [ClawHub](https://clawhub.ai)
+---
 
-## Why This Toolkit?
+## 第一步：安装 OpenClaw
 
-The official OpenClaw install works great on a local machine, but **deploying to a cloud VPS** involves extra steps — swap, firewall, npm permissions, systemd, and especially setting up a self-hosted Matrix server for chat.
-
-This toolkit handles **everything** in two commands, taking you from a fresh Ubuntu server to a fully working OpenClaw + Matrix setup.
-
-## Step 1: Install OpenClaw
-
-### Prerequisites
-
-| Item | Requirement |
-|------|-------------|
-| Server | AWS Lightsail Ubuntu 22.04 LTS (recommended: 4 vCPU / 16 GB) |
-| Access | SSH access to the server |
-| API Key | Anthropic, OpenAI, Google, or other LLM provider |
-| Chat App | Telegram, WhatsApp, Discord, or Signal account |
-
-### One-Line Install
-
-SSH into your server and run:
+SSH 登录服务器，复制粘贴这一行：
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/jiayu505/openclaw/master/install-openclaw.sh | sudo bash
 ```
 
-That's it. The script will:
-
-1. Update system packages
-2. Install all dependencies (Node.js 22, Chromium, build tools)
-3. Create and configure 4 GB swap space
-4. Set up npm global path (no permission issues)
-5. Install OpenClaw via npm
-6. Configure UFW firewall (SSH only, port 18789 blocked from public)
-7. Enable systemd linger for persistent background service
-
-After installation, run the onboarding wizard:
+跑完后执行：
 
 ```bash
 source ~/.bashrc
 openclaw onboard --install-daemon
 ```
 
-### Verify Installation
+跟着向导选模型、填 API Key 就行了。
 
-```bash
-openclaw doctor    # check configuration
-openclaw status    # check gateway status
-```
-
-## Access Web Dashboard
-
-**Do NOT expose port 18789 to the public internet.** Use an SSH tunnel instead:
-
-```bash
-# Run this on your LOCAL machine
-ssh -L 18789:localhost:18789 ubuntu@<YOUR_SERVER_IP>
-```
-
-Then open [http://localhost:18789](http://localhost:18789) in your browser.
-
-## What the Script Does
-
-```
-Step 1/7  System Update         apt update & upgrade
-Step 2/7  Dependencies          Core tools + Chromium (optional)
-Step 3/7  Swap                  4 GB swapfile + sysctl tuning
-Step 4/7  Node.js 22            Via NodeSource official repo
-Step 5/7  npm Config            Global prefix → ~/.npm-global
-Step 6/7  OpenClaw              npm install -g openclaw@latest
-Step 7/7  Firewall & systemd    UFW (SSH only) + loginctl linger
-```
-
-**Idempotent** — safe to run multiple times. Already-completed steps are automatically skipped.
-
-## Security Notes
-
-- The script runs with `sudo` but installs OpenClaw under your **normal user account**
-- UFW is configured to **only allow SSH** — the OpenClaw web port (18789) is not exposed
-- Always access the dashboard via **SSH tunnel** or **Tailscale**
-- Your Gateway Token is equivalent to a password — keep it safe
-- Review the [OpenClaw security docs](https://docs.openclaw.ai) for production hardening
-
-## Troubleshooting
-
-| Problem | Solution |
-|---------|----------|
-| `openclaw: command not found` | Run `source ~/.bashrc` to reload PATH |
-| npm install hangs | Check available memory with `free -h`, ensure swap is active |
-| Permission denied | Make sure you run with `sudo`, not as root directly |
-| Firewall blocks SSH | Script uses `ufw allow OpenSSH` before enabling — this shouldn't happen. If locked out, use Lightsail web console |
+> 验证：`openclaw doctor` 和 `openclaw status` 都没报错就 OK。
 
 ---
 
-## Step 2: Matrix Chat Channel (Optional)
+## 第二步：部署 Matrix 聊天频道（可选）
 
-After OpenClaw is installed and onboarded, deploy a self-hosted Matrix server so you can chat with your AI agent via a web UI.
+如果你想通过网页聊天室跟 AI 对话，继续装 Matrix。
 
-### What it Deploys
+### 2.1 准备域名
+
+添加两条 A 记录指向你的服务器 IP：
 
 ```
-Synapse          Matrix homeserver (Docker)
-Element Web      Web chat client (Docker)
-Nginx            Reverse proxy with SSL (Docker)
-Let's Encrypt    Auto-renewing TLS certificates
-Bot account      Auto-created with access token
-OpenClaw config  Auto-wired to the Matrix channel
+tslcz.com        →  你的服务器IP
+matrix.tslcz.com →  你的服务器IP
 ```
 
-### Prerequisites
+### 2.2 修改脚本配置
 
-| Item | Requirement |
-|------|-------------|
-| OpenClaw | Already installed and gateway running |
-| Domain | Two DNS A records pointing to your server IP |
-| Ports | 80 and 443 available |
+下载脚本后，打开文件改顶部几个变量（域名、邮箱、密码）：
 
-### Usage
+```bash
+wget https://raw.githubusercontent.com/jiayu505/openclaw/master/setup-matrix-for-openclaw.sh
+nano setup-matrix-for-openclaw.sh   # 改前几行的配置
+```
 
-1. Edit the config section at the top of the script (domain, email, etc.)
-2. Run:
+### 2.3 一键运行
 
 ```bash
 chmod +x setup-matrix-for-openclaw.sh && sudo bash setup-matrix-for-openclaw.sh
 ```
 
-3. Open `https://your-domain.com` in a browser and register your user account
-4. Create a room, invite the bot: `/invite @openclaw:your-domain.com`
-5. Send a message — the bot replies with a pairing code
-6. Approve on the server:
+### 2.4 配对（唯一需要手动做的事）
+
+1. 浏览器打开 `https://你的域名`，注册一个账号
+2. 新建聊天室
+3. 输入 `/invite @openclaw:你的域名` 邀请机器人
+4. 随便发一条消息，机器人会回复一个配对码
+5. 回到服务器执行：
 
 ```bash
-openclaw pairing approve matrix <pairing-code>
+openclaw pairing approve matrix <配对码>
 ```
 
-7. **Important** — After pairing, disable public registration:
+6. 再发消息，AI 就能回复了
+
+### 2.5 关闭公开注册（重要！）
+
+配对完成后，**必须**执行以下命令关闭注册，否则任何人都能注册你的服务器：
 
 ```bash
 sed -i 's/enable_registration: true/enable_registration: false/' /opt/matrix/synapse/homeserver.yaml
@@ -173,52 +103,99 @@ sed -i 's/enable_registration_without_verification: true/enable_registration_wit
 docker restart synapse
 ```
 
-### Architecture
+---
+
+## 架构一览
 
 ```
-User (Browser)
+你的浏览器
   │
   ▼
-Element Web ◄──── https://your-domain.com
+Element Web ◄── https://你的域名
   │
   ▼
-Nginx (SSL termination)
+Nginx (SSL)
   │
-  ├──► Synapse ◄── https://matrix.your-domain.com
+  ├──► Synapse (Matrix 服务器) ◄── https://matrix.你的域名
   │       ▲
   │       │
-  │    OpenClaw Bot (matrix-bot-sdk)
+  │    OpenClaw 机器人
   │       ▲
   │       │
-  └──► OpenClaw Gateway
+  └──► OpenClaw Gateway ◄── SSH 隧道访问控制台 (端口 18789)
 ```
-
-### Gotchas
-
-> These are hard-won lessons from actual deployment — documented so you don't repeat them.
-
-- The OpenClaw Matrix plugin config field is `homeserver`, **NOT** `homeserverUrl`
-- You must manually `npm install @vector-im/matrix-bot-sdk` into OpenClaw's `node_modules` — the script does this automatically
-- Pairing requires sending a message in Element first, then approving on the server
-- SSL certificates auto-renew via cron (daily at 3 AM)
 
 ---
 
-## Supported Platforms
+## 常见问题
 
-This script is tested on:
+| 问题 | 解决办法 |
+|------|----------|
+| `openclaw: command not found` | 执行 `source ~/.bashrc` |
+| npm 安装卡住 | `free -h` 查看内存，确认 swap 已启用 |
+| 证书签发失败 | 确认 80 端口没被占用，域名已解析 |
+| 机器人不回复 | 检查 `openclaw status`，确认 Matrix 渠道显示 connected |
+| 控制台怎么访问 | **不要**开放 18789 端口！用 SSH 隧道：`ssh -L 18789:localhost:18789 ubuntu@服务器IP`，然后浏览器打开 `localhost:18789` |
 
-- **AWS Lightsail** — Ubuntu 22.04 LTS
-- **DigitalOcean Droplets** — Ubuntu 22.04
-- **Vultr** — Ubuntu 22.04
-- **Any VPS** running Ubuntu 22.04+ with systemd
+---
 
-## Related Resources
+## 踩坑记录
 
-- [OpenClaw Official Site](https://openclaw.ai)
-- [OpenClaw Documentation](https://docs.openclaw.ai)
-- [OpenClaw GitHub](https://github.com/openclaw/openclaw)
-- [ClawHub Skills Marketplace](https://clawhub.ai)
+> 这些都是实际部署中踩过的坑，写在这里省得你再踩一遍。
+
+- OpenClaw Matrix 插件的配置字段叫 `homeserver`，**不是** `homeserverUrl`
+- 需要手动装 `@vector-im/matrix-bot-sdk` 到 OpenClaw 的 node_modules（脚本已自动处理）
+- 配对必须先在 Element 里发消息触发，再到服务器 approve
+- SSL 证书通过 cron 每天凌晨 3 点自动续签，不用管
+
+---
+
+## 安全提醒
+
+- 18789 控制台端口 **永远不要** 暴露到公网
+- Gateway Token = 密码，保管好
+- 配对完成后 **立即关闭** Matrix 公开注册
+- 建议使用 SSH 隧道或 Tailscale 访问控制台
+
+---
+
+## 相关链接
+
+- [OpenClaw 官网](https://openclaw.ai) | [文档](https://docs.openclaw.ai) | [GitHub](https://github.com/openclaw/openclaw)
+- [Matrix 协议](https://matrix.org) | [Element Web](https://element.io)
+- [ClawHub 技能市场](https://clawhub.ai)
+
+---
+
+<details>
+<summary><b>English Summary (click to expand)</b></summary>
+
+### What is this?
+
+A two-script toolkit to deploy [OpenClaw](https://openclaw.ai) (open-source AI agent) + self-hosted Matrix chat on Ubuntu 22.04.
+
+### Quick Start
+
+**Step 1 — Install OpenClaw:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/jiayu505/openclaw/master/install-openclaw.sh | sudo bash
+source ~/.bashrc && openclaw onboard --install-daemon
+```
+
+**Step 2 — Deploy Matrix (optional):**
+
+```bash
+wget https://raw.githubusercontent.com/jiayu505/openclaw/master/setup-matrix-for-openclaw.sh
+# Edit domain/email config at top of file
+chmod +x setup-matrix-for-openclaw.sh && sudo bash setup-matrix-for-openclaw.sh
+```
+
+Then open Element Web, register, invite the bot, send a message, and approve pairing on the server.
+
+For full details, see the Chinese documentation above.
+
+</details>
 
 ## License
 
