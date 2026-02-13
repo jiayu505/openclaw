@@ -147,8 +147,8 @@ async function callOpenClaw(userMessage, userId) {
     // 转义消息中的特殊字符
     const escapedMessage = userMessage.replace(/"/g, '\\"').replace(/'/g, "'\\''");
 
-    // 调用 OpenClaw agent 命令，用 jq 直接提取文本
-    const cmd = `${CONFIG.openclawPath} agent --channel wecom --to "${userId}" --message "${escapedMessage}" --json --timeout 30 2>/dev/null | jq -r '.result.payloads[0].text // "抱歉，无法生成回复"'`;
+    // 调用 OpenClaw agent 命令，过滤日志后用 jq 提取文本
+    const cmd = `${CONFIG.openclawPath} agent --channel wecom --to "${userId}" --message "${escapedMessage}" --json --timeout 30 2>&1 | grep -v "INFO\\|WARN\\|ERROR" | grep "^{" | jq -r '.result.payloads[0].text // "抱歉，无法生成回复"'`;
 
     const { stdout, stderr } = await execAsync(cmd, {
       timeout: 35000,
