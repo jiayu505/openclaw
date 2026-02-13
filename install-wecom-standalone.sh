@@ -52,16 +52,21 @@ log "服务脚本已下载到 $INSTALL_DIR/server.js"
 step "配置环境变量"
 
 read -p "企业ID (CorpId): " CORP_ID </dev/tty
-read -p "Token: " TOKEN </dev/tty
-read -p "EncodingAESKey: " AES_KEY </dev/tty
+read -p "应用ID (AgentId): " AGENT_ID </dev/tty
+read -sp "应用密钥 (Secret): " SECRET </dev/tty
+echo ""
+read -p "Token (自己设的，如 openclaw2026): " TOKEN </dev/tty
+read -p "EncodingAESKey (43位): " AES_KEY </dev/tty
 
-if [ -z "$CORP_ID" ] || [ -z "$TOKEN" ] || [ -z "$AES_KEY" ]; then
+if [ -z "$CORP_ID" ] || [ -z "$AGENT_ID" ] || [ -z "$SECRET" ] || [ -z "$TOKEN" ] || [ -z "$AES_KEY" ]; then
     err "所有字段都必须填写"
 fi
 
 # 创建环境变量文件
 cat > "$INSTALL_DIR/.env" << EOF
 WECOM_CORP_ID=$CORP_ID
+WECOM_AGENT_ID=$AGENT_ID
+WECOM_SECRET=$SECRET
 WECOM_TOKEN=$TOKEN
 WECOM_AES_KEY=$AES_KEY
 PORT=18790
