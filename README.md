@@ -1,24 +1,26 @@
 # OpenClaw 一键部署工具包
 
-### 两条命令，从零到一个能聊天的 AI 助手。
+### 几条命令，从零到一个能聊天的 AI 助手（Matrix / 企业微信）。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Ubuntu-22.04+-E95420?logo=ubuntu&logoColor=white)](https://ubuntu.com)
 [![OpenClaw](https://img.shields.io/badge/OpenClaw-Latest-FF6B6B)](https://openclaw.ai)
 [![Matrix](https://img.shields.io/badge/Matrix-Synapse-0DBD8B?logo=matrix&logoColor=white)](https://matrix.org)
+[![WeCom](https://img.shields.io/badge/企业微信-WeCom-07C160?logo=wechat&logoColor=white)](https://work.weixin.qq.com)
 
 ---
 
 ## 这是什么？
 
-[OpenClaw](https://openclaw.ai) 是一个开源的 AI 助手，跑在你自己的服务器上，通过聊天软件（Matrix / Telegram / WhatsApp / Discord）跟它对话，它帮你干活。
+[OpenClaw](https://openclaw.ai) 是一个开源的 AI 助手，跑在你自己的服务器上，通过聊天软件（Matrix / 企业微信 / Telegram / WhatsApp / Discord）跟它对话，它帮你干活。
 
-本仓库提供两个脚本，让你在云服务器上**无脑部署**：
+本仓库提供三个脚本，让你在云服务器上**无脑部署**：
 
 | 脚本 | 干什么 |
 |------|--------|
 | `install-openclaw.sh` | 装 OpenClaw（含 Node.js、Swap、防火墙，全自动） |
 | `setup-matrix-for-openclaw.sh` | 装 Matrix 聊天服务（Synapse + Element 网页版 + SSL 证书，全自动） |
+| `setup-wecom-for-openclaw.sh` | 对接企业微信应用（插件 + webhook + 配置，半自动） |
 
 ---
 
@@ -112,6 +114,46 @@ docker restart synapse
 > ```
 >
 > 注册完后记得再关掉。
+
+---
+
+## 第三步：对接企业微信（可选）
+
+如果你的团队用企业微信办公，可以把 AI 助手接入企业微信应用。
+
+### 3.1 在企业微信管理后台创建应用
+
+1. 登录 [企业微信管理后台](https://work.weixin.qq.com/)
+2. **应用管理** → **创建应用** → 选 **智能机器人**
+3. 记下：
+   - **CorpId**（企业 ID，在"我的企业"页面）
+   - **AgentId**（应用 ID）
+   - **Secret**（应用密钥）
+4. 在"接收消息"配置页面，先随便填个 Token（如 `openclaw2026`），点"随机生成" EncodingAESKey（43位），**先不要点保存**（URL 还没配好）
+
+### 3.2 运行脚本
+
+```bash
+chmod +x setup-wecom-for-openclaw.sh && sudo bash setup-wecom-for-openclaw.sh
+```
+
+脚本会：
+- 交互式输入刚才的凭据
+- 安装 `@sunnoy/wecom` 插件
+- 自动配置 OpenClaw
+- 在现有 nginx 加上 `/webhooks/wecom` 路由
+- 重启 gateway
+
+### 3.3 完成企业微信配置
+
+脚本跑完后，回到企业微信管理后台：
+
+1. **URL** 填：`https://你的域名/webhooks/wecom`
+2. **Token** 和 **EncodingAESKey** 跟脚本里输入的一致
+3. 点**保存**（会验证，显示绿色 ✓）
+4. 在企业微信 APP 打开应用，发消息测试
+
+> 验证：`openclaw status` 应该显示 `wecom: connected`
 
 ---
 
