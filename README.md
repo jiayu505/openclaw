@@ -131,10 +131,10 @@ docker restart synapse
    - **Secret**（应用密钥）
 4. 在"接收消息"配置页面，先随便填个 Token（如 `openclaw2026`），点"随机生成" EncodingAESKey（43位），**先不要点保存**（URL 还没配好）
 
-### 3.2 运行脚本
+### 3.2 一键运行
 
 ```bash
-chmod +x setup-wecom-for-openclaw.sh && sudo bash setup-wecom-for-openclaw.sh
+curl -fsSL https://raw.githubusercontent.com/jiayu505/openclaw/master/setup-wecom-for-openclaw.sh | sudo bash
 ```
 
 脚本会：

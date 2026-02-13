@@ -43,10 +43,38 @@ echo ""
 ###############################################################################
 step 1 "检查环境"
 
-# 检查 OpenClaw 版本
-if ! command -v openclaw &>/dev/null; then
-    err "未找到 openclaw 命令，请先安装 OpenClaw"
-fi
+# 智能检测 OpenClaw 安装位置
+detect_openclaw() {
+    # 1. 尝试从 PATH 找
+    if command -v openclaw &>/dev/null; then
+        OPENCLAW_BIN=$(which openclaw)
+        log "检测到 OpenClaw: $OPENCLAW_BIN"
+        return 0
+    fi
+
+    # 2. 搜索常见安装路径
+    local search_paths=(
+        "/root/.npm-global/bin/openclaw"
+        "/home/*/.npm-global/bin/openclaw"
+        "/usr/local/bin/openclaw"
+        "$(eval echo ~${SUDO_USER:-root})/.npm-global/bin/openclaw"
+    )
+
+    for pattern in "${search_paths[@]}"; do
+        for path in $pattern; do
+            if [ -f "$path" ] && [ -x "$path" ]; then
+                OPENCLAW_BIN="$path"
+                export PATH="$(dirname "$path"):$PATH"
+                log "检测到 OpenClaw: $OPENCLAW_BIN"
+                return 0
+            fi
+        done
+    done
+
+    err "未找到 openclaw 命令，请先运行 install-openclaw.sh 安装"
+}
+
+detect_openclaw
 
 OPENCLAW_VERSION=$(openclaw --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' || echo "0.0.0")
 log "OpenClaw 版本: $OPENCLAW_VERSION"
