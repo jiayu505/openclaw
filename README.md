@@ -121,6 +121,10 @@ docker restart synapse
 
 如果你的团队用企业微信办公，可以把 AI 助手接入企业微信应用。
 
+> **📖 完整教程（含踩坑记录）：** [WECOM-SETUP.md](WECOM-SETUP.md)
+>
+> 包含详细步骤、常见问题、6个大坑和解决方案。推荐先看完整教程！
+
 ### 3.1 在企业微信管理后台创建应用
 
 1. 登录 [企业微信管理后台](https://work.weixin.qq.com/)
