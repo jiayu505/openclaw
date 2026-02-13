@@ -112,12 +112,13 @@ echo "请登录企业微信管理后台获取以下信息："
 echo "  https://work.weixin.qq.com/"
 echo ""
 
-read -p "企业ID (CorpId): " CORP_ID
-read -p "应用ID (AgentId): " AGENT_ID
-read -sp "应用密钥 (Secret): " SECRET
+# 重定向到 /dev/tty 以支持 curl|bash 场景
+read -p "企业ID (CorpId): " CORP_ID </dev/tty
+read -p "应用ID (AgentId): " AGENT_ID </dev/tty
+read -sp "应用密钥 (Secret): " SECRET </dev/tty
 echo ""
-read -p "接收消息 Token（自己设一个，如 openclaw2026）: " WECOM_TOKEN
-read -p "EncodingAESKey（43位，管理后台点随机生成）: " AES_KEY
+read -p "接收消息 Token（自己设一个，如 openclaw2026）: " WECOM_TOKEN </dev/tty
+read -p "EncodingAESKey（43位，管理后台点随机生成）: " AES_KEY </dev/tty
 
 # 验证输入
 if [ -z "$CORP_ID" ] || [ -z "$AGENT_ID" ] || [ -z "$SECRET" ] || [ -z "$WECOM_TOKEN" ] || [ -z "$AES_KEY" ]; then
