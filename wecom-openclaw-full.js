@@ -142,40 +142,57 @@ async function sendMessage(toUser, content) {
 // 调用 OpenClaw AI
 async function callOpenClaw(userMessage, userId) {
   try {
-    // 检查 OpenClaw 是否可用
-    const { stdout: version } = await execAsync(`${CONFIG.openclawPath} --version 2>&1 || echo "not found"`);
+    console.log(`[OpenClaw] 处理消息 (${userId}):`, userMessage);
 
-    if (version.includes('not found')) {
-      console.error('[✗] OpenClaw 未找到，路径:', CONFIG.openclawPath);
-      return '抱歉，OpenClaw 服务暂时不可用。';
-    }
+    // 转义消息中的特殊字符
+    const escapedMessage = userMessage.replace(/"/g, '\\"').replace(/'/g, "'\\''");
 
-    console.log('[OpenClaw] 调用 AI 处理:', userMessage);
+    // 调用 OpenClaw agent 命令
+    const cmd = `${CONFIG.openclawPath} agent --channel wecom --to "${userId}" --message "${escapedMessage}" --json --timeout 30`;
 
-    // 使用 OpenClaw CLI 调用（假设有类似命令）
-    // 如果 OpenClaw 没有直接的 CLI 聊天命令，我们用一个简化的智能回复
+    const { stdout, stderr } = await execAsync(cmd, {
+      timeout: 35000,
+      maxBuffer: 1024 * 1024 * 10 // 10MB
+    });
 
-    // 方案1: 尝试调用 openclaw chat 命令（如果存在）
+    // 解析 JSON 输出
     try {
-      const { stdout, stderr } = await execAsync(
-        `echo "${userMessage.replace(/"/g, '\\"')}" | timeout 10 ${CONFIG.openclawPath} chat 2>&1`,
-        { timeout: 12000 }
-      );
+      const result = JSON.parse(stdout);
 
-      if (stdout && stdout.trim()) {
-        console.log('[OpenClaw] AI 回复:', stdout.substring(0, 100) + '...');
-        return stdout.trim();
+      // 提取 AI 回复内容
+      let reply = result.reply || result.message || result.content || result.text;
+
+      if (!reply && result.messages && result.messages.length > 0) {
+        reply = result.messages[result.messages.length - 1].content;
       }
-    } catch (err) {
-      console.log('[!] OpenClaw chat 命令不可用，使用智能回复');
+
+      if (reply) {
+        console.log('[OpenClaw] ✓ AI 回复:', reply.substring(0, 100) + (reply.length > 100 ? '...' : ''));
+        return reply;
+      } else {
+        console.error('[OpenClaw] 无法提取回复，原始输出:', stdout);
+        return '抱歉，我暂时无法理解你的问题，请换个方式问问看？';
+      }
+    } catch (parseErr) {
+      // 如果不是 JSON，直接返回文本输出
+      const cleanOutput = stdout.trim();
+      if (cleanOutput) {
+        console.log('[OpenClaw] ✓ 文本回复:', cleanOutput.substring(0, 100) + '...');
+        return cleanOutput;
+      } else {
+        console.error('[OpenClaw] 输出为空，stderr:', stderr);
+        return '抱歉，处理消息时出现了问题。';
+      }
     }
-
-    // 方案2: 如果 OpenClaw 没有 chat 命令，使用内置智能回复
-    return generateSmartReply(userMessage, userId);
-
   } catch (err) {
     console.error('[✗] OpenClaw 调用失败:', err.message);
-    return generateSmartReply(userMessage, userId);
+
+    // 如果是超时
+    if (err.killed || err.message.includes('timeout')) {
+      return '抱歉，AI 处理时间过长，请稍后再试。';
+    }
+
+    return '抱歉，OpenClaw AI 暂时不可用，请稍后再试。';
   }
 }
 
