@@ -147,50 +147,24 @@ async function callOpenClaw(userMessage, userId) {
     // 转义消息中的特殊字符
     const escapedMessage = userMessage.replace(/"/g, '\\"').replace(/'/g, "'\\''");
 
-    // 调用 OpenClaw agent 命令
-    const cmd = `${CONFIG.openclawPath} agent --channel wecom --to "${userId}" --message "${escapedMessage}" --json --timeout 30`;
+    // 调用 OpenClaw agent 命令，用 jq 直接提取文本
+    const cmd = `${CONFIG.openclawPath} agent --channel wecom --to "${userId}" --message "${escapedMessage}" --json --timeout 30 2>/dev/null | jq -r '.result.payloads[0].text // "抱歉，无法生成回复"'`;
 
     const { stdout, stderr } = await execAsync(cmd, {
       timeout: 35000,
-      maxBuffer: 1024 * 1024 * 10 // 10MB
+      maxBuffer: 1024 * 1024 * 10, // 10MB
+      shell: '/bin/bash'
     });
 
-    // 解析 JSON 输出
-    try {
-      const result = JSON.parse(stdout);
+    // jq 已经提取了纯文本，直接使用
+    const reply = stdout.trim();
 
-      // OpenClaw 返回格式: { result: { payloads: [{ text: "..." }] } }
-      let reply = null;
-
-      if (result.result && result.result.payloads && result.result.payloads.length > 0) {
-        reply = result.result.payloads[0].text;
-      } else if (result.payloads && result.payloads.length > 0) {
-        reply = result.payloads[0].text;
-      } else if (result.text) {
-        reply = result.text;
-      } else if (result.reply) {
-        reply = result.reply;
-      } else if (result.message) {
-        reply = result.message;
-      }
-
-      if (reply) {
-        console.log('[OpenClaw] ✓ AI 回复:', reply.substring(0, 100) + (reply.length > 100 ? '...' : ''));
-        return reply;
-      } else {
-        console.error('[OpenClaw] 无法提取回复，原始输出:', JSON.stringify(result, null, 2));
-        return '抱歉，我暂时无法理解你的问题，请换个方式问问看？';
-      }
-    } catch (parseErr) {
-      // 如果不是 JSON，直接返回文本输出
-      const cleanOutput = stdout.trim();
-      if (cleanOutput) {
-        console.log('[OpenClaw] ✓ 文本回复:', cleanOutput.substring(0, 100) + '...');
-        return cleanOutput;
-      } else {
-        console.error('[OpenClaw] 输出为空，stderr:', stderr);
-        return '抱歉，处理消息时出现了问题。';
-      }
+    if (reply && reply !== 'null' && !reply.startsWith('{')) {
+      console.log('[OpenClaw] ✓ AI 回复:', reply.substring(0, 100) + (reply.length > 100 ? '...' : ''));
+      return reply;
+    } else {
+      console.error('[OpenClaw] 提取失败，原始输出:', stdout);
+      return '抱歉，处理消息时出现了问题。';
     }
   } catch (err) {
     console.error('[✗] OpenClaw 调用失败:', err.message);
