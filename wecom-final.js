@@ -108,26 +108,25 @@ async function callOpenClaw(userMessage, userId) {
 
     const { stdout } = await execAsync(cmd, { timeout: 35000, maxBuffer: 10485760 });
 
-    const lines = stdout.split('\n');
-    let jsonLine = lines.find(line => line.trim().startsWith('{'));
+    // 用正则提取 "text": "..." 内容（支持转义字符）
+    const textMatch = stdout.match(/"text"\s*:\s*"((?:[^"\\]|\\.)*)"/);
 
-    if (!jsonLine) {
-      console.error('[✗] 无JSON输出');
-      return '抱歉，AI 处理失败';
-    }
+    if (textMatch && textMatch[1]) {
+      // 处理 JSON 转义字符
+      const reply = textMatch[1]
+        .replace(/\\n/g, '\n')
+        .replace(/\\"/g, '"')
+        .replace(/\\\\/g, '\\');
 
-    const result = JSON.parse(jsonLine);
-    const reply = result.result?.payloads?.[0]?.text;
-
-    if (reply) {
       console.log(`[AI] 回复: ${reply.substring(0, 80)}...`);
       return reply;
     }
 
-    return '抱歉，无法生成回复';
+    console.error('[✗] 未找到文本，输出:', stdout.substring(0, 200));
+    return '抱歉，AI 未返回有效回复';
   } catch (err) {
     console.error('[✗]', err.message);
-    return err.killed ? 'AI 处理超时' : 'AI 暂时不可用';
+    return err.killed ? 'AI 处理超时，请稍后再试' : 'AI 暂时不可用';
   }
 }
 
