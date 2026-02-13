@@ -222,6 +222,35 @@ Nginx (SSL)
 
 ---
 
+## 小技巧 💡
+
+### 让 OpenClaw 自己配置新渠道
+
+如果你已经有一个工作的渠道（如企业微信），想添加新渠道（如 Telegram），**不需要手动改配置文件**！
+
+直接在已有渠道里发消息让 OpenClaw 帮你：
+
+```
+帮我在服务器上添加 Telegram 渠道配置：
+
+1. 编辑 ~/.openclaw/openclaw.json 文件
+2. 在 channels 部分添加 telegram 配置：
+   - enabled: true
+   - botToken: <你的Bot Token>
+   - dmPolicy: "open"
+   - allowFrom: ["*"]
+3. 备份原文件
+4. 重启 OpenClaw Gateway 进程
+5. 查看日志确认加载成功
+```
+
+**优点：**
+- ✅ 30 秒搞定，不用 SSH 隧道
+- ✅ OpenClaw 在服务器本地，有 Bash 工具，直接执行命令
+- ✅ 不会手滑打错配置
+
+---
+
 ## 安全提醒
 
 - 18789 控制台端口 **永远不要** 暴露到公网
