@@ -157,6 +157,19 @@ curl -fsSL https://raw.githubusercontent.com/jiayu505/openclaw/master/setup-weco
 3. 点**保存**（会验证，显示绿色 ✓）
 4. 在企业微信 APP 打开应用，发消息测试
 
+### 3.4 启用图片支持（推荐）
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/jiayu505/openclaw/master/add-image-with-history.sh | sudo bash
+```
+
+**功能：**
+- ✅ 识别图片内容（基于 Claude vision）
+- ✅ 保存图片描述到对话历史
+- ✅ 后续对话能看到图片上下文
+
+**测试：** 发送图片后问"刚才的图片是什么？"
+
 > 验证：`openclaw status` 应该显示 `wecom: connected`
 
 ---

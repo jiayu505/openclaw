@@ -7,6 +7,7 @@
 - [环境要求](#环境要求)
 - [快速开始](#快速开始)
 - [详细步骤](#详细步骤)
+- [图片支持](#图片支持)
 - [常见问题](#常见问题)
 - [踩坑记录](#踩坑记录)
 
@@ -329,6 +330,62 @@ docker restart matrix-nginx
 ```bash
 journalctl -u wecom-webhook -f
 ```
+
+---
+
+## 图片支持
+
+### 为什么需要图片支持
+
+OpenClaw CLI 目前不支持通过命令行参数传递图片，但 Claude API 支持 vision 功能。为了让企业微信也能发送图片给 AI，我们直接调用 Claude API 处理图片。
+
+### 一键启用图片支持
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/jiayu505/openclaw/master/add-image-with-history.sh | sudo bash
+```
+
+**这个脚本会：**
+1. ✅ 安装 Anthropic SDK
+2. ✅ 添加图片下载和识别功能
+3. ✅ **将图片描述保存到 OpenClaw 对话历史**（关键！）
+4. ✅ 保留所有现有功能
+
+### 工作原理
+
+```
+用户发送图片
+    ↓
+下载图片 → Claude API 识别
+    ↓
+将 "[用户发送了图片] 图片内容：..." 发送给 OpenClaw
+    ↓
+OpenClaw 保存到对话历史
+    ↓
+发送识别结果给用户
+```
+
+**这样做的好处：**
+- ✅ 图片能被识别
+- ✅ 图片描述保存在对话历史中
+- ✅ 后续对话 AI 能看到图片上下文
+
+### 测试图片功能
+
+1. 在企业微信发送一张图片
+2. AI 会描述图片内容
+3. 问"刚才的图片是什么？"
+4. AI 应该能基于历史回答
+
+### 技术细节
+
+**为什么不直接用 OpenClaw？**
+- OpenClaw CLI 的 `agent` 命令不支持 `--image` 或 `--file` 参数
+- Telegram 等渠道的图片支持是在 Gateway 内部实现的，不经过 CLI
+
+**为什么要保存到历史？**
+- 如果只用 Claude API 识别图片但不保存历史，下次对话时 AI 就"忘记"了图片
+- 通过将图片描述发送给 OpenClaw，确保对话连贯性
 
 ---
 
