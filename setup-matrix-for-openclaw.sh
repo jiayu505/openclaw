@@ -14,6 +14,7 @@
 #    - OpenClaw Matrix 插件配置字段是 "homeserver"，不是 "homeserverUrl"!
 #    - 需要手动安装 @vector-im/matrix-bot-sdk 到 openclaw 的 node_modules
 #    - 配对(pairing)需要在 Element 里发消息触发后手动 approve
+#    - bot 应直连 http://localhost:8008，不要过 nginx 避免 Synapse 重启时 502
 ###############################################################################
 set -euo pipefail
 
@@ -331,8 +332,9 @@ step 9 "配置 OpenClaw Matrix 渠道"
 
 # ⚠️ 关键: 字段名是 homeserver 不是 homeserverUrl!
 # 这是踩了大坑后确认的，插件源码读的是 account.homeserver
+# bot 直连 localhost:8008 而不走 nginx，避免 Synapse 重启时 502 错误
 openclaw config set channels.matrix.enabled true
-openclaw config set channels.matrix.homeserver "https://${MATRIX_DOMAIN}"
+openclaw config set channels.matrix.homeserver "http://localhost:8008"
 openclaw config set channels.matrix.userId "$BOT_USER_ID"
 openclaw config set channels.matrix.accessToken "$ACCESS_TOKEN"
 

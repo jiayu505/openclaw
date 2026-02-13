@@ -126,13 +126,15 @@ Element Web ◄── https://你的域名
   ▼
 Nginx (SSL)
   │
-  ├──► Synapse (Matrix 服务器) ◄── https://matrix.你的域名
-  │       ▲
-  │       │
-  │    OpenClaw 机器人
-  │       ▲
-  │       │
-  └──► OpenClaw Gateway ◄── SSH 隧道访问控制台 (端口 18789)
+  └──► Synapse (Matrix 服务器) ◄── https://matrix.你的域名
+          ▲
+          │
+          │ (http://localhost:8008 直连，不过 nginx)
+          │
+     OpenClaw 机器人
+          ▲
+          │
+     OpenClaw Gateway ◄── SSH 隧道访问控制台 (端口 18789)
 ```
 
 ---
@@ -156,6 +158,7 @@ Nginx (SSL)
 - OpenClaw Matrix 插件的配置字段叫 `homeserver`，**不是** `homeserverUrl`
 - 需要手动装 `@vector-im/matrix-bot-sdk` 到 OpenClaw 的 node_modules（脚本已自动处理）
 - 配对必须先在 Element 里发消息触发，再到服务器 approve
+- bot 直连 `http://localhost:8008`，不走 nginx，避免 Synapse 重启时 502 错误
 - SSL 证书通过 cron 每天凌晨 3 点自动续签，不用管
 
 ---
