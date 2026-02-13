@@ -147,8 +147,8 @@ async function callOpenClaw(userMessage, userId) {
     // 转义消息中的特殊字符
     const escapedMessage = userMessage.replace(/"/g, '\\"').replace(/'/g, "'\\''");
 
-    // 调用 OpenClaw agent 命令，过滤日志后用 jq 提取文本
-    const cmd = `${CONFIG.openclawPath} agent --channel wecom --to "${userId}" --message "${escapedMessage}" --json --timeout 30 2>&1 | grep -v "INFO\\|WARN\\|ERROR" | grep "^{" | jq -r '.result.payloads[0].text // "抱歉，无法生成回复"'`;
+    // 调用 OpenClaw agent 命令
+    const cmd = `${CONFIG.openclawPath} agent --channel wecom --to "${userId}" --message "${escapedMessage}" --json --timeout 30`;
 
     const { stdout, stderr } = await execAsync(cmd, {
       timeout: 35000,
@@ -156,15 +156,39 @@ async function callOpenClaw(userMessage, userId) {
       shell: '/bin/bash'
     });
 
-    // jq 已经提取了纯文本，直接使用
-    const reply = stdout.trim();
+    // 按行分割，找到 JSON 行（忽略 INFO 日志）
+    const lines = stdout.split('\n');
+    let jsonLine = null;
 
-    if (reply && reply !== 'null' && !reply.startsWith('{')) {
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('{')) {
+        jsonLine = trimmed;
+        break;
+      }
+    }
+
+    if (!jsonLine) {
+      console.error('[OpenClaw] 未找到 JSON 输出');
+      console.error('完整输出:', stdout);
+      return '抱歉，无法获取 AI 回复。';
+    }
+
+    // 解析 JSON
+    const result = JSON.parse(jsonLine);
+
+    // 提取文本
+    let reply = null;
+    if (result.result && result.result.payloads && result.result.payloads[0]) {
+      reply = result.result.payloads[0].text;
+    }
+
+    if (reply) {
       console.log('[OpenClaw] ✓ AI 回复:', reply.substring(0, 100) + (reply.length > 100 ? '...' : ''));
       return reply;
     } else {
-      console.error('[OpenClaw] 提取失败，原始输出:', stdout);
-      return '抱歉，处理消息时出现了问题。';
+      console.error('[OpenClaw] 无法提取回复，JSON:', JSON.stringify(result, null, 2));
+      return '抱歉，无法解析 AI 回复。';
     }
   } catch (err) {
     console.error('[✗] OpenClaw 调用失败:', err.message);
