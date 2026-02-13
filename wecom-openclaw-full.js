@@ -159,18 +159,26 @@ async function callOpenClaw(userMessage, userId) {
     try {
       const result = JSON.parse(stdout);
 
-      // 提取 AI 回复内容
-      let reply = result.reply || result.message || result.content || result.text;
+      // OpenClaw 返回格式: { result: { payloads: [{ text: "..." }] } }
+      let reply = null;
 
-      if (!reply && result.messages && result.messages.length > 0) {
-        reply = result.messages[result.messages.length - 1].content;
+      if (result.result && result.result.payloads && result.result.payloads.length > 0) {
+        reply = result.result.payloads[0].text;
+      } else if (result.payloads && result.payloads.length > 0) {
+        reply = result.payloads[0].text;
+      } else if (result.text) {
+        reply = result.text;
+      } else if (result.reply) {
+        reply = result.reply;
+      } else if (result.message) {
+        reply = result.message;
       }
 
       if (reply) {
         console.log('[OpenClaw] ✓ AI 回复:', reply.substring(0, 100) + (reply.length > 100 ? '...' : ''));
         return reply;
       } else {
-        console.error('[OpenClaw] 无法提取回复，原始输出:', stdout);
+        console.error('[OpenClaw] 无法提取回复，原始输出:', JSON.stringify(result, null, 2));
         return '抱歉，我暂时无法理解你的问题，请换个方式问问看？';
       }
     } catch (parseErr) {
