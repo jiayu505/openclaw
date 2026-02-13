@@ -46,14 +46,13 @@ log "OpenClaw $(openclaw --version 2>/dev/null || echo '')"
 
 step "配置 Telegram"
 
-# 创建配置文件
+# 创建配置文件（使用正确的字段名）
 mkdir -p ~/.openclaw/channels
 cat > ~/.openclaw/channels/telegram.json << EOF
 {
   "enabled": true,
-  "token": "$BOT_TOKEN",
-  "polling": true,
-  "webhook": false
+  "botToken": "$BOT_TOKEN",
+  "dmPolicy": "open"
 }
 EOF
 
